@@ -1,0 +1,53 @@
+{
+    "name": "instawp/mcp-php",
+    "description": "Professional WordPress MCP Server with PHP SDK",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "InstaWP\\MCP\\PHP\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "InstaWP\\MCP\\PHP\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Vikas Singhal",
+            "email": "vikas.programmer@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.2",
+        "mcp/sdk": "dev-main",
+        "guzzlehttp/psr7": "^2.8",
+        "http-interop/http-factory-guzzle": "^1.2",
+        "nyholm/psr7": "^1.8",
+        "nyholm/psr7-server": "^1.1",
+        "laminas/laminas-httphandlerrunner": "^2.13",
+        "respect/validation": "^2.3",
+        "psr/log": "^3.0",
+        "league/oauth2-server": "^9.1",
+        "lcobucci/jwt": "^5.4",
+        "lcobucci/clock": "^3.2.0 <3.4",
+        "defuse/php-encryption": "^2.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5",
+        "mockery/mockery": "^1.6",
+        "phpstan/phpstan": "^1.10"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:coverage": "phpunit --coverage-html coverage",
+        "analyse": "phpstan analyse src tests --level=8"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

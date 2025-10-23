@@ -1,15 +1,13 @@
 # InstaMCP - WordPress MCP Server Plugin
 
-**Model Context Protocol (MCP) server for WordPress with flexible authentication options**
+**Model Context Protocol (MCP) server for WordPress**
 
-Enable AI assistants like Claude to interact with your WordPress site through a standardized protocol with secure, per-user API tokens or OAuth 2.1 authentication.
+Enable AI assistants like Claude to interact with your WordPress site through a standardized protocol with secure, per-user API tokens.
 
 ## Features
 
 - ✅ **17 MCP Tools** for WordPress content and taxonomy management
-- ✅ **User Token Authentication** - Simple API tokens tied to WordPress users (primary method)
-- ✅ **OAuth 2.1 Authentication** - Full OAuth flow with JWT tokens (optional, advanced)
-- ✅ **RFC 8414 & RFC 9728 Compliant** OAuth discovery
+- ✅ **User Token Authentication** - Simple API tokens tied to WordPress users
 - ✅ **Role-Based Permissions** - Inherit permissions from WordPress user roles
 - ✅ **WordPress Capability Checks** - Respects edit_posts, publish_posts, etc.
 - ✅ **Safe Mode** - Prevent delete operations for added safety
@@ -17,6 +15,7 @@ Enable AI assistants like Claude to interact with your WordPress site through a 
 - ✅ **Token Expiration** - Optional TTL for enhanced security
 - ✅ **Admin Settings UI** - Easy token management and configuration
 - ✅ **Query Param Auth** - Convenient `?t=token` authentication (all HTTP methods)
+- 🚧 **OAuth 2.1** - Coming soon (currently in development)
 
 ## Installation
 
@@ -76,25 +75,13 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-## Endpoints
+## Endpoint
 
-### MCP Endpoint
+The main MCP endpoint for all requests:
+
 ```
 https://your-site.com/insta-mcp
-https://your-site.com/insta-mcp?t=TOKEN  (with query param auth)
-```
-
-### OAuth Discovery (RFC 8414) - Optional, Advanced Use
-```
-https://your-site.com/.well-known/oauth-authorization-server/insta-mcp
-https://your-site.com/.well-known/oauth-protected-resource/insta-mcp
-https://your-site.com/.well-known/jwks.json/insta-mcp
-```
-
-### OAuth Flow - Optional, Advanced Use
-```
-https://your-site.com/insta-mcp/oauth/authorize
-https://your-site.com/insta-mcp/oauth/token
+https://your-site.com/insta-mcp?t=YOUR_TOKEN  (with query param auth)
 ```
 
 ## Configuration
@@ -125,29 +112,14 @@ https://your-site.com/insta-mcp/oauth/token
 - **Endpoint Slug**: Customize the URL slug (default: `insta-mcp`)
 - **Safe Mode**: Prevent delete operations for added protection
 
-### OAuth Settings (Optional, Advanced)
-1. Generate RSA keys:
-   ```bash
-   openssl genrsa -out oauth-private.key 4096
-   openssl rsa -in oauth-private.key -pubout -out oauth-public.key
-   chmod 600 oauth-private.key
-   ```
-
-2. Configure in Settings → InstaMCP:
-   - Enable OAuth authentication
-   - Set issuer URL (e.g., `https://your-site.com/insta-mcp`)
-   - Set RSA key paths
-
-3. Register OAuth clients (via WP-CLI or custom script)
-
 ## Permissions & Security
 
-### WordPress Role to Scope Mapping
+### WordPress Role to Permission Mapping
 
 Tokens inherit permissions from the associated WordPress user's role:
 
-| WordPress Role | OAuth Scopes | Example Capabilities |
-|---------------|-------------|---------------------|
+| WordPress Role | Permission Scopes | Example Capabilities |
+|---------------|------------------|---------------------|
 | Administrator | `mcp:admin`, `mcp:delete`, `mcp:write`, `mcp:read` | Full access to all content |
 | Editor | `mcp:delete`, `mcp:write`, `mcp:read` | Edit/publish any content |
 | Author | `mcp:write`, `mcp:read` | Edit/publish own content only |
@@ -158,7 +130,7 @@ Tokens inherit permissions from the associated WordPress user's role:
 
 InstaMCP enforces **two layers of permissions**:
 
-1. **OAuth Scopes** - Broad permission categories (read, write, delete, admin)
+1. **Permission Scopes** - Broad permission categories (read, write, delete, admin)
 2. **WordPress Capabilities** - Fine-grained permissions (edit_posts, edit_others_posts, publish_posts, etc.)
 
 **Example:** An Author role user can create and publish content (`mcp:write` scope), but can only edit their **own** posts due to WordPress's `edit_others_posts` capability check.
@@ -167,43 +139,27 @@ After successful authentication, `wp_set_current_user()` is called to ensure all
 
 ## Authentication
 
-### Authentication Methods
+### User Token Authentication
 
-InstaMCP supports two authentication methods:
+InstaMCP uses simple, secure API tokens tied to WordPress users:
 
-1. **User Tokens (Primary, Recommended)**
-   - Simple API tokens tied to WordPress users
-   - Easy to create and manage via admin UI
-   - Supports query parameter (`?t=token`) or header authentication (all HTTP methods)
-   - Per-user permissions based on WordPress roles
-   - Optional expiration dates
-   - Automatically sets WordPress current user for capability checks
-
-2. **OAuth 2.1 (Optional, Advanced)**
-   - Full OAuth authorization code flow
-   - JWT-based access tokens
-   - RFC 8414/9728 compliant discovery
-   - Refresh token support
-   - Best for third-party integrations
+- **Easy to create** - Manage tokens via admin UI
+- **Flexible authentication** - Use query parameter (`?t=token`) or Authorization header
+- **Per-user permissions** - Inherits WordPress role and capabilities
+- **Optional expiration** - Set TTL for enhanced security
+- **Session tracking** - See when tokens were last used
 
 **Authentication is always required** - no unauthenticated access mode.
 
-**Priority:** OAuth (if enabled and JWT present) → User Token → 401 Unauthorized
+**Security:** After successful authentication, `wp_set_current_user()` is called with the authenticated user ID, ensuring all WordPress capability checks (edit_posts, publish_posts, delete_posts, etc.) are properly enforced.
 
-**Security:** After successful authentication, `wp_set_current_user()` is called with the authenticated user ID, ensuring all WordPress capability checks (edit_posts, publish_posts, delete_posts, etc.) are properly enforced. This means tools respect both OAuth scopes AND WordPress's granular permission system.
+**OAuth 2.1:** Advanced OAuth authentication is currently in development and will be available in a future release.
 
 ## Database Tables
 
-The plugin creates the following tables on activation:
+The plugin creates the following table on activation:
 
-**User Token Authentication (always):**
-- `wp_insta_mcp_user_tokens` - User API tokens
-
-**OAuth 2.1 (only if OAuth feature enabled):**
-- `wp_insta_mcp_oauth_clients` - Registered OAuth clients
-- `wp_insta_mcp_oauth_authorization_codes` - Short-lived authorization codes
-- `wp_insta_mcp_oauth_access_tokens` - Token revocation tracking
-- `wp_insta_mcp_oauth_refresh_tokens` - Long-lived refresh tokens
+- `wp_insta_mcp_user_tokens` - Stores user API tokens with SHA256 hashing
 
 ## Development
 
