@@ -145,6 +145,48 @@ fi
 run_test "Get content by slug" \
     "$INSPECTOR --method tools/call --tool-name get_content_by_slug --tool-arg slug=hello-world | grep -q 'slug.*hello-world'"
 
+# Plugin & Theme Management Tests
+
+# Test 19: Search for plugins
+run_test "Search for plugins" \
+    "$INSPECTOR --method tools/call --tool-name plugin_info --tool-arg action=search --tool-arg query=seo | grep -q 'plugins'"
+
+# Test 20: List installed plugins
+run_test "List installed plugins" \
+    "$INSPECTOR --method tools/call --tool-name plugin_info --tool-arg action=list | grep -q 'plugins'"
+
+# Test 21: Get plugin info
+run_test "Get plugin info (hello-dolly)" \
+    "$INSPECTOR --method tools/call --tool-name plugin_info --tool-arg action=get --tool-arg plugin=hello-dolly | grep -q 'Hello Dolly'"
+
+# Test 22: Install a small test plugin
+run_test "Install plugin (hello-dolly)" \
+    "$INSPECTOR --method tools/call --tool-name plugin_operations --tool-arg action=install --tool-arg plugin=hello-dolly --tool-arg source=wordpress.org | grep -q 'installed'"
+
+# Test 23: Activate the installed plugin
+run_test "Activate plugin (hello-dolly)" \
+    "$INSPECTOR --method tools/call --tool-name plugin_operations --tool-arg action=activate --tool-arg plugin=hello-dolly | grep -q 'activated'"
+
+# Test 24: Deactivate the plugin
+run_test "Deactivate plugin (hello-dolly)" \
+    "$INSPECTOR --method tools/call --tool-name plugin_operations --tool-arg action=deactivate --tool-arg plugin=hello-dolly | grep -q 'deactivated'"
+
+# Test 25: Read plugin file
+run_test "Read plugin file" \
+    "$INSPECTOR --method tools/call --tool-name plugin_files --tool-arg action=read --tool-arg plugin=hello-dolly --tool-arg file_path=hello.php | grep -q 'content'"
+
+# Test 26: Search for themes
+run_test "Search for themes" \
+    "$INSPECTOR --method tools/call --tool-name theme_info --tool-arg action=search --tool-arg query=minimal | grep -q 'themes'"
+
+# Test 27: List installed themes
+run_test "List installed themes" \
+    "$INSPECTOR --method tools/call --tool-name theme_info --tool-arg action=list | grep -q 'themes'"
+
+# Test 28: Get current theme info
+run_test "Get current theme info" \
+    "$INSPECTOR --method tools/call --tool-name theme_info --tool-arg action=get --tool-arg theme=twentytwentyfour | grep -q 'Twenty'"
+
 # Clean up
 rm -f /tmp/mcp_test_output
 

@@ -10,6 +10,11 @@ InstaMCP is a WordPress plugin that implements a Model Context Protocol (MCP) se
 1. **User Tokens** - Simple API tokens tied to WordPress users (via query param or header)
 2. **OAuth 2.1** - Full OAuth authorization code flow with JWT tokens (optional)
 
+**Debug Log Location:**
+- WordPress debug log is located at `/Volumes/insta-mount/wp-content/debug.log`
+- Check this file for InstaMCP logs, errors, and tool execution traces
+- All MCP operations are logged with `[INFO]` prefix for debugging
+
 ## Plugin Architecture
 
 ### Core Structure
@@ -39,7 +44,7 @@ insta-mcp/
 **MCP Endpoint (`includes/endpoints/mcp-http.php`):**
 - Loads configuration from WordPress options
 - Handles authentication via AuthenticationManager
-- Initializes all 17 MCP tools
+- Initializes all 23 MCP tools
 - Creates MCP server with PSR-7 transport
 - Returns responses via SAPI emitter
 
@@ -343,6 +348,142 @@ check_admin_referer('insta_mcp_settings')
 - Flushes rewrite rules (removes custom endpoints)
 
 **Important:** Does NOT delete data on deactivation. Use uninstall hook for cleanup.
+
+## Plugin & Theme Management
+
+InstaMCP provides 6 tools for managing WordPress plugins and themes via MCP:
+
+### Plugin Tools
+
+**1. PluginInfo Tool (`plugin_info`)**
+- **Actions:** `search`, `list`, `get`
+- **Scope:** `mcp:read`
+- **Description:** Search WordPress.org repository, list installed plugins, get plugin details
+
+**2. PluginOperations Tool (`plugin_operations`)**
+- **Actions:** `install`, `activate`, `deactivate`, `update`, `delete`
+- **Scope:** `mcp:admin`
+- **Blocked by:** Safe mode
+- **Description:** Full plugin lifecycle management
+
+**3. PluginFiles Tool (`plugin_files`)**
+- **Actions:** `read`, `write`
+- **Scope:** `mcp:admin`
+- **Blocked by:** Safe mode (write only)
+- **Description:** Read/write plugin files with security validation
+
+**Features:**
+- Multiple installation sources (WordPress.org, URL, base64 ZIP)
+- Dependency checking (PHP/WP version requirements)
+- Automatic backups on file writes
+- Path traversal prevention
+- Extension whitelisting (php, js, css, json, txt, md, xml, yml, yaml, ini)
+- Respects `DISALLOW_FILE_EDIT` and `DISALLOW_FILE_MODS` constants
+
+### Theme Tools
+
+**4. ThemeInfo Tool (`theme_info`)**
+- **Actions:** `search`, `list`, `get`
+- **Scope:** `mcp:read`
+- **Description:** Search WordPress.org repository, list installed themes, get theme details
+
+**5. ThemeOperations Tool (`theme_operations`)**
+- **Actions:** `install`, `activate`, `update`, `delete`
+- **Scope:** `mcp:admin`
+- **Blocked by:** Safe mode
+- **Description:** Full theme lifecycle management
+
+**6. ThemeFiles Tool (`theme_files`)**
+- **Actions:** `read`, `write`
+- **Scope:** `mcp:admin`
+- **Blocked by:** Safe mode (write only)
+- **Description:** Read/write theme files with security validation
+
+**Features:**
+- Multiple installation sources (WordPress.org, URL, base64 ZIP)
+- Parent theme validation for child themes
+- Automatic backups on file writes
+- Path traversal prevention
+- Extension whitelisting (php, js, css, json, txt, md, xml, yml, yaml, ini, scss, less)
+- Respects `DISALLOW_FILE_EDIT` and `DISALLOW_FILE_MODS` constants
+
+### Implementation Details
+
+**Silent Upgrader:**
+- All install/update operations use `SilentUpgraderSkin` class
+- Completely suppresses WordPress upgrader output
+- Prevents HTML output from interfering with JSON responses
+- See: `src/Services/SilentUpgraderSkin.php`
+
+**File Security:**
+- Validation via `validatePluginFilePath()` and `validateThemeFilePath()`
+- Checks for `DISALLOW_FILE_EDIT` and `DISALLOW_FILE_MODS` constants
+- Real path validation prevents directory traversal (handles both existing and new files)
+- Extension whitelist blocks executable uploads
+- All write operations create timestamped backups
+- **Creating New Plugins:** Use slug format `plugin=my-plugin` - tool constructs `my-plugin/my-plugin.php` automatically
+- **Existing Plugins:** Use full path `plugin=existing/existing.php` or slug `plugin=existing`
+
+**Error Handling:**
+- All operations return structured error messages
+- WordPress errors wrapped in `ToolException::wordpressError()`
+- Dependency failures provide detailed version requirements
+- Path traversal attempts return security error
+
+### Testing Plugin/Theme Tools
+
+```bash
+# Search for plugins
+npx @modelcontextprotocol/inspector \
+  --cli "https://your-site.com/insta-mcp?t=TOKEN" \
+  --transport http \
+  --method tools/call \
+  --tool-name plugin_info \
+  --tool-arg action=search \
+  --tool-arg query=seo
+
+# Install plugin
+npx @modelcontextprotocol/inspector \
+  --cli "https://your-site.com/insta-mcp?t=TOKEN" \
+  --transport http \
+  --method tools/call \
+  --tool-name plugin_operations \
+  --tool-arg action=install \
+  --tool-arg plugin=hello-dolly \
+  --tool-arg source=wordpress.org
+
+# Read plugin file
+npx @modelcontextprotocol/inspector \
+  --cli "https://your-site.com/insta-mcp?t=TOKEN" \
+  --transport http \
+  --method tools/call \
+  --tool-name plugin_files \
+  --tool-arg action=read \
+  --tool-arg plugin=hello-dolly \
+  --tool-arg file_path=hello.php
+
+# Write plugin file (with backup)
+npx @modelcontextprotocol/inspector \
+  --cli "https://your-site.com/insta-mcp?t=TOKEN" \
+  --transport http \
+  --method tools/call \
+  --tool-name plugin_files \
+  --tool-arg action=write \
+  --tool-arg plugin=hello-dolly \
+  --tool-arg file_path=readme.txt \
+  --tool-arg content="New readme content"
+
+# Create NEW plugin from scratch
+npx @modelcontextprotocol/inspector \
+  --cli "https://your-site.com/insta-mcp?t=TOKEN" \
+  --transport http \
+  --method tools/call \
+  --tool-name plugin_files \
+  --tool-arg action=write \
+  --tool-arg plugin=my-plugin \
+  --tool-arg file_path=my-plugin.php \
+  --tool-arg content="<?php /* Plugin Name: My Plugin */"
+```
 
 ## Common Tasks
 

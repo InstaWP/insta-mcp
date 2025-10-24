@@ -6,7 +6,8 @@ Enable AI assistants like Claude to interact with your WordPress site through a 
 
 ## Features
 
-- ✅ **17 MCP Tools** for WordPress content and taxonomy management
+- ✅ **23 MCP Tools** for WordPress content, taxonomy, plugin, and theme management
+- ✅ **Plugin & Theme Management** - Install, activate, update, and manage plugin/theme files
 - ✅ **User Token Authentication** - Simple API tokens tied to WordPress users
 - ✅ **Role-Based Permissions** - Inherit permissions from WordPress user roles
 - ✅ **WordPress Capability Checks** - Respects edit_posts, publish_posts, etc.

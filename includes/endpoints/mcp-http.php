@@ -51,6 +51,16 @@ use InstaWP\MCP\PHP\Tools\Taxonomy\DeleteTerm;
 use InstaWP\MCP\PHP\Tools\Taxonomy\AssignTermsToContent;
 use InstaWP\MCP\PHP\Tools\Taxonomy\GetContentTerms;
 
+// Plugin tools
+use InstaWP\MCP\PHP\Tools\Plugin\PluginInfo;
+use InstaWP\MCP\PHP\Tools\Plugin\PluginOperations;
+use InstaWP\MCP\PHP\Tools\Plugin\PluginFiles;
+
+// Theme tools
+use InstaWP\MCP\PHP\Tools\Theme\ThemeInfo;
+use InstaWP\MCP\PHP\Tools\Theme\ThemeOperations;
+use InstaWP\MCP\PHP\Tools\Theme\ThemeFiles;
+
 // Load configuration from WordPress options
 $config = insta_mcp_get_config();
 
@@ -105,6 +115,16 @@ $tools = [
     new DeleteTerm($wpService, $validationService, $logger),
     new AssignTermsToContent($wpService, $validationService, $logger),
     new GetContentTerms($wpService, $validationService, $logger),
+
+    // Plugin tools
+    new PluginInfo($wpService, $validationService, $logger),
+    new PluginOperations($wpService, $validationService, $logger),
+    new PluginFiles($wpService, $validationService, $logger),
+
+    // Theme tools
+    new ThemeInfo($wpService, $validationService, $logger),
+    new ThemeOperations($wpService, $validationService, $logger),
+    new ThemeFiles($wpService, $validationService, $logger),
 ];
 
 // Create PSR-7 request factory
